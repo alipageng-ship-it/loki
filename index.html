@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lokal Pedia - Aceh Timur & Langsa Explorer</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        :root {
+            --primary: #8B0000;
+            --secondary: #d4a373;
+            --dark: #1a1a1a;
+            --light: #fdfaf5;
+            --white: #ffffff;
+            --glass: rgba(255, 255, 255, 0.9);
+        }
+
+        /* Base Setup */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { background-color: var(--light); color: var(--dark); scroll-behavior: smooth; transition: 0.3s; }
+        h1, h2, .logo { font-family: 'Montserrat', sans-serif; }
+
+        /* Navigation */
+        nav {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            padding: 15px 8%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .logo { font-size: 1.8rem; font-weight: 800; color: var(--primary); letter-spacing: -1px; }
+        .nav-links a { text-decoration: none; color: var(--dark); font-weight: 600; margin-left: 20px; transition: 0.3s; }
+        .nav-links a:hover { color: var(--primary); }
+
+        /* Hero Section */
+        .hero {
+            height: 70vh;
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: var(--white);
+            text-align: center;
+            clip-path: ellipse(150% 100% at 50% 0%);
+        }
+        .hero h1 { font-size: 4rem; margin-bottom: 10px; }
+        .search-container {
+            background: var(--white);
+            padding: 8px 25px;
+            border-radius: 50px;
+            width: 80%;
+            max-width: 500px;
+            display: flex;
+            align-items: center;
+            margin-top: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .search-container input { border: none; outline: none; width: 100%; padding: 12px; font-size: 1rem; }
+        .search-container i { color: var(--primary); font-size: 1.2rem; }
+
+        /* Content Section */
+        .section-padding { padding: 80px 8%; }
+        .section-header { text-align: center; margin-bottom: 50px; }
+        .section-header h2 { font-size: 2.5rem; color: var(--primary); }
+
+        /* Menu Grid */
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 30px;
+        }
+        .card {
+            background: var(--white);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            transition: 0.4s;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        .card.reveal { opacity: 1; transform: translateY(0); }
+        .card:hover { transform: translateY(-15px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .card img { width: 100%; height: 230px; object-fit: cover; }
+        .card-info { padding: 25px; }
+        .card-info h3 { margin-bottom: 10px; color: var(--primary); }
+        .badge { background: var(--secondary); color: white; padding: 4px 12px; border-radius: 15px; font-size: 0.75rem; font-weight: bold; }
+
+        /* Map */
+        #map { height: 450px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); z-index: 1; }
+
+        /* Form */
+        .contact-box {
+            background: var(--primary);
+            color: white;
+            padding: 50px;
+            border-radius: 30px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+        input, textarea { width: 100%; padding: 15px; margin-bottom: 15px; border-radius: 10px; border: none; }
+        .btn-send { background: var(--secondary); color: white; border: none; padding: 15px 30px; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; }
+
+        footer { background: var(--dark); color: white; padding: 50px 8%; text-align: center; }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            .contact-box { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo">LOKAL PEDIA</div>
+        <div class="nav-links">
+            <a href="#menu">Menu</a>
+            <a href="#peta">Peta</a>
+            <a href="#kontak">Kontak</a>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <h1>Cita Rasa Aceh</h1>
+        <p>Jelajahi Kuliner Terbaik di Aceh Timur & Langsa</p>
+        <div class="search-container">
+            <i class="fas fa-search"></i>
+            <input type="text" id="findInput" placeholder="Cari kuliner favoritmu...">
+        </div>
+    </header>
+
+    <section class="section-padding" id="menu">
+        <div class="section-header">
+            <h2>Katalog Kuliner</h2>
+            <p>Pilihan hidangan yang sudah teruji kelezatannya.</p>
+        </div>
+        <div class="menu-grid" id="mainGrid">
+            </div>
+    </section>
+
+    <section class="section-padding" id="peta" style="background: #f0f0f0;">
+        <div class="section-header">
+            <h2>Lokasi Interaktif</h2>
+            <p>Klik pin pada peta untuk melihat kedai terdekat.</p>
+        </div>
+        <div id="map"></div>
+    </section>
+
+    <section class="section-padding" id="kontak">
+        <div class="contact-box">
+            <div>
+                <h2>Punya Rekomendasi?</h2>
+                <p>Bantu kami melengkapi data Lokal Pedia dengan mengirimkan info jajanan baru di sekitar Anda.</p>
+                <div style="margin-top: 20px; font-size: 1.5rem;">
+                    <i class="fab fa-whatsapp"></i> <i class="fab fa-instagram"></i>
+                </div>
+            </div>
+            <form id="suggestForm">
+                <input type="text" placeholder="Nama Kuliner" required>
+                <input type="text" placeholder="Lokasi (Kecamatan/Jalan)" required>
+                <textarea placeholder="Deskripsi Singkat" rows="4"></textarea>
+                <button type="submit" class="btn-send">Kirim Rekomendasi</button>
+            </form>
+        </div>
+    </section>
+
+    <footer>
+        <p>Lokal Pedia &copy; 2026 | Langsa & Aceh Timur Pride</p>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const kulinerData = [
+            { id: 1, name: "Mie Aceh Kepiting", loc: "Idi Rayeuk", desc: "Mie rempah pedas dengan kepiting segar.", lat: 4.95, lng: 97.77, img: "https://images.unsplash.com/photo-1552611052-33e04de081de?w=400" },
+            { id: 2, name: "Sate Matang", loc: "Simpang Ulim", desc: "Sate sapi legendaris dengan kuah soto.", lat: 5.05, lng: 97.55, img: "https://images.unsplash.com/photo-1561651823-34feb02250e4?w=400" },
+            { id: 3, name: "Kopi Sanger", loc: "Kota Langsa", desc: "Kopi tarik susu khas warkop Langsa.", lat: 4.47, lng: 97.96, img: "https://images.unsplash.com/photo-1541167760496-1628856ab772?w=400" },
+            { id: 4, name: "Pisang Srikaya", loc: "Langsa", desc: "Pisang goreng manis lumer khas sore hari.", lat: 4.48, lng: 97.97, img: "https://images.unsplash.com/photo-1596797038530-2c39da0c7d11?w=400" }
+        ];
+
+        // Render Cards
+        const grid = document.getElementById('mainGrid');
+        function render(items) {
+            grid.innerHTML = items.map(item => `
+                <div class="card">
+                    <img src="${item.img}" alt="${item.name}">
+                    <div class="card-info">
+                        <span class="badge">${item.loc}</span>
+                        <h3>${item.name}</h3>
+                        <p>${item.desc}</p>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Re-trigger scroll animation
+            setTimeout(reveal, 100);
+        }
+
+        // Search functionality
+        document.getElementById('findInput').addEventListener('input', (e) => {
+            const val = e.target.value.toLowerCase();
+            const filtered = kulinerData.filter(k => k.name.toLowerCase().includes(val) || k.loc.toLowerCase().includes(val));
+            render(filtered);
+        });
+
+        // Map setup
+        const map = L.map('map').setView([4.75, 97.75], 9);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        kulinerData.forEach(p => {
+            L.marker([p.lat, p.lng]).addTo(map).bindPopup(`<b>${p.name}</b><br>${p.loc}`);
+        });
+
+        // Scroll Reveal Animation
+        function reveal() {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(c => {
+                const top = c.getBoundingClientRect().top;
+                if(top < window.innerHeight - 100) c.classList.add('reveal');
+            });
+        }
+
+        window.addEventListener('scroll', reveal);
+        document.getElementById('suggestForm').onsubmit = (e) => {
+            e.preventDefault();
+            alert('Terima kasih! Rekomendasi Anda akan kami tinjau.');
+            e.target.reset();
+        };
+
+        render(kulinerData);
+    </script>
+</body>
+</html>
